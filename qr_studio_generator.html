@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>QR Studio — QR Code Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --ink: #171b2e;
+      --muted: #7c849b;
+      --line: #e8ebf3;
+      --accent: #6658f5;
+      --accent-dark: #5043df;
+      --sidebar: #11152a;
+      --sidebar-muted: #9ca4c0;
+      --radius: 20px;
+      --shadow: 0 14px 45px rgba(26, 32, 66, .07);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: "DM Sans", sans-serif; }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    aside {
+      background: var(--sidebar); color: white; padding: 28px 18px; display: flex;
+      flex-direction: column; gap: 34px; min-height: 100vh;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+    .brand-mark { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg,#8c7cff,#5949ee); display:grid; place-items:center; box-shadow: 0 8px 22px #6658f555; }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .brand-name { font: 700 19px "Space Grotesk", sans-serif; letter-spacing: -.5px; }
+    .brand-name span { color: #a9a1ff; }
+    .nav-label { color: #737d9e; font-size: 10px; letter-spacing: 1.7px; font-weight: 700; padding: 0 12px; margin-bottom: 10px; }
+    .nav-item { width:100%; display:flex; align-items:center; gap:12px; padding:12px 13px; border:0; border-radius:12px; background:transparent; color:var(--sidebar-muted); text-align:left; font-size:13px; margin: 3px 0; }
+    .nav-item svg { width:18px; height:18px; flex-shrink:0; }
+    .nav-item.active { background: linear-gradient(100deg,#6658f52d,#6658f511); color:#fff; box-shadow: inset 3px 0 #8175ff; }
+    .nav-item.active svg { color:#a8a0ff; }
+    .side-bottom { margin-top:auto; border:1px solid #ffffff12; background:#ffffff08; padding:16px; border-radius:16px; }
+    .side-bottom .mini-icon { width:32px;height:32px;border-radius:10px;background:#6658f533;color:#b9b2ff;display:grid;place-items:center;margin-bottom:12px; }
+    .side-bottom strong { font-size:13px; display:block; margin-bottom:6px; }
+    .side-bottom p { font-size:11px; color:#9ca4c0; line-height:1.6; margin:0; }
+    main { min-width:0; padding: 30px clamp(18px, 4vw, 52px) 40px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:34px; }
+    .crumb { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:9px; }
+    .crumb b { color:var(--ink); font-weight:600; }
+    .top-actions { display:flex; align-items:center; gap:12px; }
+    .status { display:flex;align-items:center;gap:7px;color:#5b657e;font-size:12px;background:#fff;border:1px solid var(--line);padding:9px 12px;border-radius:99px; }
+    .dot { width:7px;height:7px;background:#20bd83;border-radius:50%;box-shadow:0 0 0 3px #20bd831c; }
+    .avatar { width:36px;height:36px;border-radius:12px;background:#e8e4ff;color:#6254e8;display:grid;place-items:center;font-weight:700;font-size:12px; }
+    .intro { margin-bottom:26px; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:1.8px; font-size:10px; font-weight:700; margin-bottom:10px; }
+    h1 { font:700 clamp(27px,3vw,37px) "Space Grotesk",sans-serif; letter-spacing:-1.4px; margin:0 0 9px; }
+    .intro p { color:var(--muted);font-size:13px;margin:0;line-height:1.7; }
+    .workspace { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr); gap:22px; align-items:start; }
+    .panel { background:var(--surface); border:1px solid #e9ecf4; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    .panel-head { padding:22px 24px 18px; border-bottom:1px solid var(--line); display:flex;justify-content:space-between;align-items:center;gap:12px; }
+    .panel-title { font:700 16px "Space Grotesk",sans-serif; letter-spacing:-.3px; }
+    .panel-sub { font-size:11px;color:var(--muted);margin-top:5px; }
+    .step { font-size:10px;font-weight:700;color:var(--accent);background:#f0eeff;padding:7px 9px;border-radius:8px;white-space:nowrap; }
+    .panel-body { padding:23px 24px 25px; }
+    .field-label { display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;margin-bottom:10px; }
+    .field-label small { font-size:10px;color:var(--muted);font-weight:500; }
+    .type-grid { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:23px; }
+    .type-btn { border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;color:#7a8298;font-size:10px;transition:.18s; }
+    .type-btn svg { width:18px;height:18px; }
+    .type-btn:hover { border-color:#c5c0ff;color:var(--accent); }
+    .type-btn.active { border-color:var(--accent);background:#f4f2ff;color:var(--accent);box-shadow:0 0 0 2px #6658f510; }
+    textarea, input[type="text"], input[type="email"], input[type="url"], input[type="tel"], input[type="password"], select {
+      width:100%; border:1px solid #e2e6f0; background:#fbfcff; border-radius:12px; padding:13px 14px; color:var(--ink); outline:none; transition:.2s;
+    }
+    textarea { min-height:118px; resize:vertical; line-height:1.6; font-size:12px; }
+    input:focus,textarea:focus,select:focus { border-color:#a39aff;box-shadow:0 0 0 3px #6658f515;background:#fff; }
+    .helper { color:var(--muted);font-size:10px;line-height:1.6;margin-top:8px; }
+    .wifi-fields { display:grid;gap:11px; }
+    .two-col { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+    .divider { height:1px;background:var(--line);margin:23px 0; }
+    .color-row { display:grid;grid-template-columns:1fr 1fr;gap:13px; }
+    .color-control { display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:#fbfcff; }
+    input[type="color"] { width:28px;height:28px;padding:0;border:0;background:none;border-radius:8px;cursor:pointer; }
+    .color-control span { font-size:11px;color:#596179; }
+    .color-control b { display:block;font-size:11px;color:var(--ink);margin-bottom:3px; }
+    .range-wrap { margin-top:21px; }
+    .range-top { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;font-weight:700; }
+    .range-value { color:var(--accent);background:#f0eeff;border-radius:7px;padding:5px 8px;font-size:10px; }
+    input[type="range"] { width:100%; accent-color:var(--accent); }
+    .range-labels { display:flex;justify-content:space-between;color:#9aa1b4;font-size:10px;margin-top:4px; }
+    .select-wrap { margin-top:20px; }
+    select { font-size:12px;padding:12px; }
+    .primary-btn { border:0;background:linear-gradient(135deg,#7568ff,#5849e8);color:#fff;border-radius:12px;padding:14px 17px;font-size:12px;font-weight:700;display:flex;justify-content:center;align-items:center;gap:9px;width:100%;box-shadow:0 9px 20px #6658f52b;transition:.2s; }
+    .primary-btn:hover { transform:translateY(-1px);box-shadow:0 12px 24px #6658f540; }
+    .primary-btn svg,.secondary-btn svg { width:16px;height:16px; }
+    .preview-panel { position:sticky;top:22px; }
+    .preview-head { padding:22px 24px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line); }
+    .live-pill { display:flex;align-items:center;gap:6px;font-size:10px;color:#189a6d;background:#eafaf3;border-radius:99px;padding:6px 9px;font-weight:700; }
+    .preview-body { padding:25px 24px 23px; }
+    .qr-stage { min-height:300px;border-radius:17px;background-color:#f6f7fc;background-image:radial-gradient(#dfe3f0 1px,transparent 1px);background-size:15px 15px;display:grid;place-items:center;padding:22px;position:relative; }
+    .qr-frame { background:#fff;padding:16px;border-radius:15px;box-shadow:0 12px 35px #25294b15;display:grid;place-items:center;max-width:100%; }
+    #qrCanvas { display:block;max-width:100%;height:auto!important; }
+    #qrSvg { display:none;max-width:100%;height:auto; }
+    .placeholder { width:220px;height:220px;display:grid;place-items:center;color:#a4abc0;text-align:center; }
+    .placeholder svg { width:60px;height:60px;opacity:.5;margin-bottom:12px; }
+    .placeholder p { font-size:11px;line-height:1.7;margin:0; }
+    .preview-meta { display:flex;justify-content:space-between;align-items:center;margin:17px 2px 20px;color:var(--muted);font-size:10px;gap:12px; }
+    .preview-meta strong { color:var(--ink);font-size:11px; }
+    .download-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    .secondary-btn { display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #e2e6f0;background:#fff;color:#4d5570;border-radius:11px;padding:12px 10px;font-size:11px;font-weight:700;transition:.2s; }
+    .secondary-btn:hover { border-color:#bcb5ff;background:#f9f8ff;color:var(--accent); }
+    .secondary-btn:disabled { opacity:.45;cursor:not-allowed; }
+    .privacy-note { display:flex;gap:9px;align-items:flex-start;margin-top:18px;padding:12px;background:#f8f9fd;border-radius:11px;color:#7e879f;font-size:10px;line-height:1.6; }
+    .privacy-note svg { width:15px;height:15px;flex-shrink:0;color:#8c82f7;margin-top:1px; }
+    .toast { position:fixed;right:24px;bottom:24px;background:#171b2e;color:#fff;padding:13px 17px;border-radius:12px;font-size:12px;box-shadow:0 12px 30px #11152a30;opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s;z-index:10; }
+    .toast.show { opacity:1;transform:translateY(0); }
+    .error { color:#d94b5b;font-size:11px;margin-top:8px;display:none; }
+    .mobile-brand { display:none; }
+    @media (max-width: 1050px) {
+      .app { grid-template-columns:210px minmax(0,1fr); }
+      aside { padding:24px 13px; }
+      .workspace { grid-template-columns:1fr; }
+      .preview-panel { position:static; }
+      .qr-stage { min-height:280px; }
+    }
+    @media (max-width: 700px) {
+      .app { display:block; }
+      aside { display:none; }
+      main { padding:20px 14px 30px; }
+      .mobile-brand { display:flex;align-items:center;gap:10px;margin-bottom:23px; }
+      .mobile-brand .brand-mark { width:34px;height:34px; }
+      .topbar { margin-bottom:26px; }
+      .status { display:none; }
+      .intro { margin-bottom:21px; }
+      .panel-head,.preview-head { padding:19px 18px 16px; }
+      .panel-body,.preview-body { padding:19px 17px 20px; }
+      .type-grid { gap:5px; }
+      .type-btn { font-size:9px;padding:11px 2px 9px; }
+      .type-btn svg { width:17px;height:17px; }
+      .qr-stage { min-height:260px;padding:15px; }
+      .two-col { grid-template-columns:1fr; }
+    }
+    @media (max-width: 380px) { .type-btn span { font-size:8px; } .color-row { gap:8px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v2m-3 4h4v-3"/></svg></div>
+      <div class="brand-name">QR<span>Studio</span></div>
+    </div>
+    <div>
+      <div class="nav-label">WORKSPACE</div>
+      <button class="nav-item active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v2m-3 4h4v-3"/></svg>QR Generator</button>
+      <button class="nav-item" type="button" id="resetNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Start fresh</button>
+    </div>
+    <div>
+      <div class="nav-label">QUICK TIPS</div>
+      <div class="nav-item" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a7 7 0 0 0-4 12.7c.6.4 1 1.1 1 1.8h6c0-.7.4-1.4 1-1.8A7 7 0 0 0 12 3Z"/><path d="M9 21h6m-5-3v3m4-3v3"/></svg>Use high contrast</div>
+      <div class="nav-item" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18m9-9H3"/><circle cx="12" cy="12" r="9"/></svg>Keep a quiet margin</div>
+    </div>
+    <div class="side-bottom">
+      <div class="mini-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <strong>Private by design</strong>
+      <p>Your QR content is generated in your browser. No account needed.</p>
+    </div>
+  </aside>
+
+  <main>
+    <div class="mobile-brand">
+      <div class="brand-mark" style="background:linear-gradient(135deg,#8c7cff,#5949ee);color:white;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v2m-3 4h4v-3"/></svg></div>
+      <div class="brand-name">QR<span style="color:#6658f5">Studio</span></div>
+    </div>
+    <div class="topbar">
+      <div class="crumb">Workspace <span>›</span> <b>QR Generator</b></div>
+      <div class="top-actions"><div class="status"><span class="dot"></span> Generator ready</div><div class="avatar">QS</div></div>
+    </div>
+    <section class="intro">
+      <div class="eyebrow">Simple. Smart. Scannable.</div>
+      <h1>Create your QR code.</h1>
+      <p>Turn any link or message into a scannable code in seconds.<br class="desktop-break"> Customize it, preview it, and download it instantly.</p>
+    </section>
+
+    <div class="workspace">
+      <section class="panel">
+        <div class="panel-head">
+          <div><div class="panel-title">Configure your code</div><div class="panel-sub">Add content and make it yours.</div></div>
+          <div class="step">STEP 01 / 02</div>
+        </div>
+        <div class="panel-body">
+          <div class="field-label">Content type <small>Choose one</small></div>
+          <div class="type-grid" id="typeGrid">
+            <button class="type-btn active" data-type="url" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>Website</span></button>
+            <button class="type-btn" data-type="text" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>Text</span></button>
+            <button class="type-btn" data-type="email" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Email</span></button>
+            <button class="type-btn" data-type="phone" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M10 18h4"/></svg><span>Phone</span></button>
+            <button class="type-btn" data-type="wifi" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8.8a15 15 0 0 1 20 0M5 12a10.5 10.5 0 0 1 14 0m-11 3.3a5.5 5.5 0 0 1 8 0M12 19h.01"/></svg><span>Wi-Fi</span></button>
+          </div>
+
+          <div id="contentFields">
+            <div class="field-label"><label for="mainInput">Website URL</label><small>Required</small></div>
+            <input id="mainInput" type="url" placeholder="https://example.com" value="https://example.com" autocomplete="url">
+            <div class="helper">Enter the full address, including https://, for the most reliable scanning.</div>
+          </div>
+          <div id="errorMsg" class="error" role="alert"></div>
+
+          <div class="divider"></div>
+          <div class="field-label">Personalize design <small>Make it stand out</small></div>
+          <div class="color-row">
+            <label class="color-control"><input type="color" id="fgColor" value="#171b2e"><span><b>Code color</b><span id="fgHex">#171B2E</span></span></label>
+            <label class="color-control"><input type="color" id="bgColor" value="#ffffff"><span><b>Background</b><span id="bgHex">#FFFFFF</span></span></label>
+          </div>
+          <div class="range-wrap">
+            <div class="range-top"><label for="sizeRange">Output size</label><span class="range-value" id="sizeValue">280 × 280 px</span></div>
+            <input type="range" id="sizeRange" min="160" max="640" step="40" value="280">
+            <div class="range-labels"><span>160 px</span><span>400 px</span><span>640 px</span></div>
+          </div>
+          <div class="select-wrap">
+            <div class="field-label"><label for="ecLevel">Error correction</label><small>Scanning reliability</small></div>
+            <select id="ecLevel">
+              <option value="L">Low — smaller code</option>
+              <option value="M" selected>Medium — recommended</option>
+              <option value="Q">Quartile — extra protection</option>
+              <option value="H">High — maximum protection</option>
+            </select>
+          </div>
+          <button class="primary-btn" id="generateBtn" type="button" style="margin-top:23px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg>Generate QR code</button>
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="preview-head">
+          <div><div class="panel-title">Live preview</div><div class="panel-sub">Your code, ready to scan.</div></div>
+          <div class="live-pill"><span class="dot"></span> LIVE</div>
+        </div>
+        <div class="preview-body">
+          <div class="qr-stage">
+            <div class="qr-frame" id="qrFrame">
+              <div class="placeholder" id="placeholder"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v2m-3 4h4v-3"/></svg><p>Your QR code will appear here.<br>Enter content to get started.</p></div></div>
+              <canvas id="qrCanvas" aria-label="Generated QR code" style="display:none"></canvas>
+              <img id="qrSvg" alt="Generated QR code SVG">
+            </div>
+          </div>
+          <div class="preview-meta"><span>Format <strong id="formatLabel">PNG / SVG</strong></span><span>Size <strong id="metaSize">280 × 280 px</strong></span></div>
+          <div class="download-grid">
+            <button class="secondary-btn" id="downloadPng" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>Download PNG</button>
+            <button class="secondary-btn" id="downloadSvg" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>Download SVG</button>
+          </div>
+          <div class="privacy-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg><span><strong style="color:#5c657d">Your content stays yours.</strong> QR codes are created locally in your browser. This page does not upload your text to a server.</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const state = { type: 'url', generated: false, svgUrl: null, payload: '' };
+  const mainInput = $('mainInput');
+  const contentFields = $('contentFields');
+  const errorMsg = $('errorMsg');
+  const qrCanvas = $('qrCanvas');
+  const qrSvg = $('qrSvg');
+  const placeholder = $('placeholder');
+  const downloadPng = $('downloadPng');
+  const downloadSvg = $('downloadSvg');
+
+  const fieldsMarkup = {
+    url: `<div class="field-label"><label for="mainInput">Website URL</label><small>Required</small></div><input id="mainInput" type="url" placeholder="https://example.com" value="https://example.com" autocomplete="url"><div class="helper">Enter the full address, including https://, for the most reliable scanning.</div>`,
+    text: `<div class="field-label"><label for="mainInput">Your text</label><small>Required</small></div><textarea id="mainInput" placeholder="Type a message, address, or any text...">Hello! This QR code was made with QR Studio.</textarea><div class="helper">Keep it concise for a simpler code that's easier to scan.</div>`,
+    email: `<div class="wifi-fields"><div><div class="field-label"><label for="emailAddress">Email address</label></div><input id="emailAddress" type="email" placeholder="hello@example.com"></div><div><div class="field-label"><label for="emailSubject">Subject <small>Optional</small></label></div><input id="emailSubject" type="text" placeholder="Hello there"></div><div><div class="field-label"><label for="emailBody">Message <small>Optional</small></label></div><textarea id="emailBody" placeholder="Write your message..." style="min-height:80px"></textarea></div></div>`,
+    phone: `<div class="field-label"><label for="phoneNumber">Phone number</label><small>Required</small></div><input id="phoneNumber" type="tel" placeholder="+880 1XXX-XXXXXX"><div class="helper">Include your country code so it works internationally.</div>`,
+    wifi: `<div class="wifi-fields"><div><div class="field-label"><label for="wifiName">Network name (SSID)</label></div><input id="wifiName" type="text" placeholder="Your Wi-Fi name"></div><div><div class="field-label"><label for="wifiPassword">Password</label></div><input id="wifiPassword" type="password" placeholder="Wi-Fi password"></div><div><div class="field-label"><label for="wifiSecurity">Security</label></div><select id="wifiSecurity"><option value="WPA">WPA / WPA2 / WPA3</option><option value="WEP">WEP</option><option value="nopass">No password</option></select></div><label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#69728a"><input type="checkbox" id="wifiHidden"> Hidden network</label><div class="helper">Anyone who scans this code may be able to join your Wi-Fi. Share it carefully.</div></div>`
+  };
+
+  function showToast(message) {
+    const toast = $('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  function currentPayload() {
+    const val = (id) => ($(id)?.value || '').trim();
+    if (state.type === 'url' || state.type === 'text') return val('mainInput');
+    if (state.type === 'phone') {
+      const phone = val('phoneNumber');
+      return phone ? `tel:${phone.replace(/\s+/g, '')}` : '';
+    }
+    if (state.type === 'email') {
+      const address = val('emailAddress');
+      if (!address) return '';
+      const params = new URLSearchParams();
+      if (val('emailSubject')) params.set('subject', val('emailSubject'));
+      if (val('emailBody')) params.set('body', val('emailBody'));
+      return `mailto:${address}${params.toString() ? '?' + params.toString() : ''}`;
+    }
+    if (state.type === 'wifi') {
+      const ssid = val('wifiName');
+      if (!ssid) return '';
+      const security = val('wifiSecurity');
+      const escapeWifi = (s) => s.replace(/([\\;,:"])/g, '\\$1');
+      const password = security === 'nopass' ? '' : val('wifiPassword');
+      return `WIFI:T:${security};S:${escapeWifi(ssid)};P:${escapeWifi(password)};H:${$('wifiHidden').checked ? 'true' : 'false'};;`;
+    }
+    return '';
+  }
+
+  function setError(message) {
+    errorMsg.textContent = message;
+    errorMsg.style.display = message ? 'block' : 'none';
+  }
+
+  function getOptions() {
+    return {
+      width: Number($('sizeRange').value),
+      margin: 2,
+      errorCorrectionLevel: $('ecLevel').value,
+      color: { dark: $('fgColor').value, light: $('bgColor').value }
+    };
+  }
+
+  function setPreviewVisible(visible) {
+    placeholder.style.display = visible ? 'none' : 'grid';
+    qrCanvas.style.display = visible ? 'block' : 'none';
+    qrSvg.style.display = 'none';
+    downloadPng.disabled = !visible;
+    downloadSvg.disabled = !visible;
+  }
+
+  async function generate(showMessage = true) {
+    if (!window.QRCode) {
+      setError('QR library could not load. Check your internet connection and refresh this page.');
+      return;
+    }
+    const payload = currentPayload();
+    if (!payload) {
+      setPreviewVisible(false);
+      state.generated = false;
+      setError('Please enter the required information first.');
+      return;
+    }
+    if (state.type === 'url') {
+      try { new URL(payload); }
+      catch { setError('Please enter a valid website address, such as https://example.com.'); return; }
+    }
+    if (state.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('emailAddress').value.trim())) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (state.type === 'wifi' && $('wifiSecurity').value !== 'nopass' && !$('wifiPassword').value) {
+      setError('Enter the Wi-Fi password or select “No password”.');
+      return;
+    }
+    if (payload.length > 2900) {
+      setError('That content is too long for this generator. Try shortening it.');
+      return;
+    }
+    setError('');
+    try {
+      const options = getOptions();
+      await QRCode.toCanvas(qrCanvas, payload, options);
+      const svgText = await QRCode.toString(payload, { ...options, type: 'svg' });
+      if (state.svgUrl) URL.revokeObjectURL(state.svgUrl);
+      state.svgUrl = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' }));
+      state.payload = payload;
+      state.generated = true;
+      setPreviewVisible(true);
+      $('metaSize').textContent = `${options.width} × ${options.width} px`;
+      $('sizeValue').textContent = `${options.width} × ${options.width} px`;
+      if (showMessage) showToast('Your QR code is ready!');
+    } catch (error) {
+      setError('Could not generate this QR code. Try shorter content or a lower error-correction level.');
+      console.error(error);
+    }
+  }
+
+  function chooseType(type) {
+    state.type = type;
+    document.querySelectorAll('.type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+    contentFields.innerHTML = fieldsMarkup[type];
+    setError('');
+    state.generated = false;
+    setPreviewVisible(false);
+    const first = contentFields.querySelector('input, textarea');
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  document.querySelectorAll('.type-btn').forEach(btn => btn.addEventListener('click', () => chooseType(btn.dataset.type)));
+  $('generateBtn').addEventListener('click', () => generate(true));
+  $('resetNav').addEventListener('click', () => {
+    chooseType('url');
+    $('fgColor').value = '#171b2e';
+    $('bgColor').value = '#ffffff';
+    $('sizeRange').value = '280';
+    $('ecLevel').value = 'M';
+    updateColorLabels();
+    $('sizeValue').textContent = '280 × 280 px';
+    setError('');
+    showToast('Workspace reset.');
+  });
+
+  function updateColorLabels() {
+    $('fgHex').textContent = $('fgColor').value.toUpperCase();
+    $('bgHex').textContent = $('bgColor').value.toUpperCase();
+  }
+  $('fgColor').addEventListener('input', () => { updateColorLabels(); if (state.generated) generate(false); });
+  $('bgColor').addEventListener('input', () => { updateColorLabels(); if (state.generated) generate(false); });
+  $('sizeRange').addEventListener('input', () => {
+    $('sizeValue').textContent = `${$('sizeRange').value} × ${$('sizeRange').value} px`;
+    if (state.generated) generate(false);
+  });
+  $('ecLevel').addEventListener('change', () => { if (state.generated) generate(false); });
+
+  contentFields.addEventListener('input', () => {
+    if (state.generated) generate(false);
+  });
+  contentFields.addEventListener('change', () => {
+    if (state.generated) generate(false);
+  });
+
+  function download(blobUrl, filename) {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  downloadPng.addEventListener('click', () => {
+    if (!state.generated) return;
+    qrCanvas.toBlob(blob => {
+      if (!blob) return showToast('Could not export PNG.');
+      const url = URL.createObjectURL(blob);
+      download(url, 'qr-studio-code.png');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  });
+  downloadSvg.addEventListener('click', () => {
+    if (state.generated && state.svgUrl) download(state.svgUrl, 'qr-studio-code.svg');
+  });
+
+  updateColorLabels();
+  // Create an initial example so the preview is useful immediately.
+  generate(false);
+})();
+</script>
+</body>
+</html>
